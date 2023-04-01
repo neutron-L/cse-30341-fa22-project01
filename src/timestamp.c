@@ -16,7 +16,10 @@
  **/
 double timestamp() {
     /* TODO: Implement */
-    return 0;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    return tv.tv_sec + tv.tv_usec / 1000000.0;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */

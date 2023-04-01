@@ -15,6 +15,8 @@
  **/
 void scheduler_add(Scheduler *s, FILE *fs, const char *command) {
     /* TODO: Implement */
+    queue_push(&s->waiting, process_create(command)); 
+    fprintf(fs, "Added process \"%s\" to waiting queue.\n", command);
 }
 
 /**
@@ -24,8 +26,24 @@ void scheduler_add(Scheduler *s, FILE *fs, const char *command) {
  * @param   queue   Bitmask specifying which queues to display.
  **/
 void scheduler_status(Scheduler *s, FILE *fs, int queue) {
-    fprintf(fs, "Running = %4lu, Waiting = %4lu, Finished = %4lu, Turnaround = %05.2lf, Response = %05.2lf\n");
+    fprintf(fs, "Running = %4lu, Waiting = %4lu, Finished = %4lu, Turnaround = %05.2lf, Response = %05.2lf\n",
+        s->running.size, s->waiting.size, s->finished.size, s->total_turnaround_time / s->finished.size, s->total_response_time / s->finished.size);
     /* TODO: Complement implementation. */
+    if ((queue & RUNNING) && s->running.size)
+    {
+        fprintf(fs, "\nRunning Queue:\n");
+        queue_dump(&s->running, fs);
+    }
+    if ((queue & WAITING) && s->waiting.size)
+    {
+        fprintf(fs, "\nWaiting Queue:\n");
+        queue_dump(&s->waiting, fs);
+    }
+    if ((queue & FINISHED) && s->finished.size)
+    {
+        fprintf(fs, "\nFinished Queue:\n");
+        queue_dump(&s->finished, fs);
+    }
 }
 
 /**
@@ -34,6 +52,10 @@ void scheduler_status(Scheduler *s, FILE *fs, int queue) {
  **/
 void scheduler_next(Scheduler *s) {
     /* TODO: Dispatch to appropriate scheduler function. */
+    if (s->policy == FIFO_POLICY)
+        scheduler_fifo(s);
+    else 
+        scheduler_rdrn(s);
 }
 
 /**
@@ -47,6 +69,16 @@ void scheduler_wait(Scheduler *s) {
      *  - Update Process metrics.
      *  - Update Scheduler metrics.
      **/
+    pid_t pid;
+
+    while ((pid = waitpid(-1, NULL, WNOHANG)) > 0)
+    {
+        Process *found = queue_remove(&s->running, pid);
+        found->end_time = timestamp();
+        s->total_turnaround_time += found->end_time - found->arrival_time;
+        s->total_response_time += found->start_time - found->arrival_time;
+        queue_push(&s->finished, found);
+    }
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */

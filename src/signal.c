@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern Scheduler PQShellScheduler;
+
 /**
  * Register signal handler with specified flags.
  * @param   signum      Signal number
@@ -35,6 +37,8 @@ bool signal_register(int signum, int flags, sighandler_t handler) {
  **/
 void sigalrm_handler(int signum) {
     /* TODO: Handle timer event. */
+    scheduler_wait(&PQShellScheduler);
+    scheduler_next(&PQShellScheduler);
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */

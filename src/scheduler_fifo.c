@@ -16,6 +16,15 @@
  */
 void scheduler_fifo(Scheduler *s) {
     /* TODO: Implement FIFO Policy */
+    Process * pcb;
+
+    while (s->running.size < s->cores &&
+         (pcb = queue_pop(&s->waiting)) != NULL) 
+    {
+        assert(!pcb->pid);
+        process_start(pcb);
+        queue_push(&s->running, pcb);
+    }
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
